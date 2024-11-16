@@ -1,0 +1,10 @@
+{
+  "skip_files": [
+    "lib/ash/dsl",
+    "lib/ash/domain/dsl.ex",
+    "lib/ash/domain/interface.ex",
+    "lib/ash/error",
+    "lib/ash/resource/dsl.ex",
+    "lib/mix/tasks"
+  ]
+}

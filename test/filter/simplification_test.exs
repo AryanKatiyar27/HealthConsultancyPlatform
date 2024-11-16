@@ -1,0 +1,123 @@
+defmodule Ash.Test.Filter.SimplificationTest do
+  @moduledoc false
+  use ExUnit.Case, async: true
+
+  require Ash.Query
+  require Ash.Test.Helpers
+
+  alias Ash.Test.Domain, as: Domain
+
+  defmodule Post do
+    @moduledoc false
+    use Ash.Resource, domain: Domain, data_layer: Ash.DataLayer.Ets
+
+    ets do
+      private?(true)
+    end
+
+    actions do
+      default_accept :*
+      read :read
+    end
+
+    attributes do
+      uuid_primary_key :id
+
+      attribute :title, :string do
+        public?(true)
+      end
+
+      attribute :contents, :string do
+        public?(true)
+      end
+
+      attribute :points, :integer do
+        public?(true)
+      end
+
+      attribute :post_date, :date do
+        public?(true)
+      end
+    end
+  end
+
+  describe "date" do
+    test "less than or equal to" do
+      {:ok, expr} = Ash.Test.Helpers.hydrated_expr(Post, post_date <= ^~D[2021-01-01])
+
+      assert %Ash.Query.Operator.LessThan{
+               operator: :<,
+               right: ~D[2021-01-02]
+             } = Ash.SatSolver.transform(Post, expr)
+    end
+
+    test "less than" do
+      {:ok, expr} = Ash.Test.Helpers.hydrated_expr(Post, post_date < ^~D[2021-01-01])
+
+      assert %Ash.Query.Operator.LessThan{
+               operator: :<,
+               right: ~D[2021-01-01]
+             } = Ash.SatSolver.transform(Post, expr)
+    end
+
+    test "greater than or equal to" do
+      {:ok, expr} = Ash.Test.Helpers.hydrated_expr(Post, post_date >= ^~D[2021-01-01])
+
+      assert {:not,
+              %Ash.Query.Operator.LessThan{
+                operator: :<,
+                right: ~D[2021-01-01]
+              }} = Ash.SatSolver.transform(Post, expr)
+    end
+
+    test "greater than" do
+      {:ok, expr} = Ash.Test.Helpers.hydrated_expr(Post, post_date > ^~D[2021-01-01])
+
+      assert {:not,
+              %Ash.Query.Operator.LessThan{
+                operator: :<,
+                right: ~D[2021-01-02]
+              }} = Ash.SatSolver.transform(Post, expr)
+    end
+  end
+
+  describe "integer" do
+    test "less than or equal to" do
+      {:ok, expr} = Ash.Test.Helpers.hydrated_expr(Post, points <= 1)
+
+      assert %Ash.Query.Operator.LessThan{
+               operator: :<,
+               right: 2
+             } = Ash.SatSolver.transform(Post, expr)
+    end
+
+    test "less than" do
+      {:ok, expr} = Ash.Test.Helpers.hydrated_expr(Post, points < 1)
+
+      assert %Ash.Query.Operator.LessThan{
+               operator: :<,
+               right: 1
+             } = Ash.SatSolver.transform(Post, expr)
+    end
+
+    test "greater than or equal to" do
+      {:ok, expr} = Ash.Test.Helpers.hydrated_expr(Post, points >= 1)
+
+      assert {:not,
+              %Ash.Query.Operator.LessThan{
+                operator: :<,
+                right: 1
+              }} = Ash.SatSolver.transform(Post, expr)
+    end
+
+    test "greater than" do
+      {:ok, expr} = Ash.Test.Helpers.hydrated_expr(Post, points > 1)
+
+      assert {:not,
+              %Ash.Query.Operator.LessThan{
+                operator: :<,
+                right: 2
+              }} = Ash.SatSolver.transform(Post, expr)
+    end
+  end
+end

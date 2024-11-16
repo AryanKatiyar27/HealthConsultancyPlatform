@@ -1,0 +1,21 @@
+name: Ash CI
+on:
+  push:
+    tags:
+      - "v*"
+    branches: [main, "3.0"]
+  pull_request:
+    branches: [main, "3.0"]
+  workflow_dispatch:
+
+jobs:
+  ash-ci:
+    strategy:
+      matrix:
+        sat_solver: ["SimpleSat", "Picosat"]
+    uses: ash-project/ash/.github/workflows/ash-ci.yml@main
+    secrets:
+      HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
+    with:
+      sat-solver: ${{ matrix.sat_solver }}
+      igniter-upgrade: ${{matrix.sat_solver == 'SimpleSat'}}
